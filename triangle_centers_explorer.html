@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Triangle Centers Explorer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Prevent text selection and scrolling during touch dragging */
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: none; 
+    }
+    svg {
+      display: block;
+    }
+  </style>
+</head>
+<body class="flex flex-col md:flex-row h-screen w-full bg-slate-50 font-sans text-slate-800">
+
+  <!-- Control Panel -->
+  <div class="w-full md:w-80 bg-white border-r border-slate-200 p-6 overflow-y-auto flex-shrink-0 shadow-lg z-10">
+    <h1 class="text-2xl font-bold mb-2 text-slate-900">Triangle Centers</h1>
+    <p class="text-sm text-slate-500 mb-6">Drag the vertices to explore the properties of triangle centers.</p>
+
+    <div class="space-y-4">
+      
+      <!-- Centroid Toggle -->
+      <div class="p-4 rounded-xl border-2 border-amber-100 bg-amber-50 transition-colors hover:border-amber-200">
+        <label class="flex items-center cursor-pointer mb-2">
+          <input type="checkbox" id="toggle-centroid" checked class="sr-only peer"/>
+          <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 relative"></div>
+          <span class="ml-3 font-semibold text-amber-900">Centroid (G)</span>
+        </label>
+        <p class="text-xs text-amber-700/80 leading-relaxed">
+          Intersection of the <strong>medians</strong> (lines from vertices to opposite side midpoints). Always inside the triangle. Divides each median in a 2:1 ratio.
+        </p>
+      </div>
+
+      <!-- Circumcenter Toggle -->
+      <div class="p-4 rounded-xl border-2 border-blue-100 bg-blue-50 transition-colors hover:border-blue-200">
+        <label class="flex items-center cursor-pointer mb-2">
+          <input type="checkbox" id="toggle-circumcenter" class="sr-only peer"/>
+          <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 relative"></div>
+          <span class="ml-3 font-semibold text-blue-900">Circumcenter (O)</span>
+        </label>
+        <p class="text-xs text-blue-700/80 leading-relaxed">
+          Intersection of the <strong>perpendicular bisectors</strong>. Equidistant from all vertices, making it the center of the circumcircle.
+        </p>
+      </div>
+
+      <!-- Orthocenter Toggle -->
+      <div class="p-4 rounded-xl border-2 border-red-100 bg-red-50 transition-colors hover:border-red-200">
+        <label class="flex items-center cursor-pointer mb-2">
+          <input type="checkbox" id="toggle-orthocenter" class="sr-only peer"/>
+          <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500 relative"></div>
+          <span class="ml-3 font-semibold text-red-900">Orthocenter (H)</span>
+        </label>
+        <p class="text-xs text-red-700/80 leading-relaxed">
+          Intersection of the <strong>altitudes</strong> (perpendicular lines from vertices to opposite sides). Can fall outside the triangle.
+        </p>
+      </div>
+
+      <!-- Incenter Toggle -->
+      <div class="p-4 rounded-xl border-2 border-emerald-100 bg-emerald-50 transition-colors hover:border-emerald-200">
+        <label class="flex items-center cursor-pointer mb-2">
+          <input type="checkbox" id="toggle-incenter" class="sr-only peer"/>
+          <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+          <span class="ml-3 font-semibold text-emerald-900">Incenter (I)</span>
+        </label>
+        <p class="text-xs text-emerald-700/80 leading-relaxed">
+          Intersection of the <strong>angle bisectors</strong>. Equidistant from all sides, making it the center of the incircle.
+        </p>
+      </div>
+
+      <!-- Euler Line Toggle -->
+      <div class="p-4 rounded-xl border-2 border-purple-100 bg-purple-50 transition-colors hover:border-purple-200">
+        <label class="flex items-center cursor-pointer mb-2">
+          <input type="checkbox" id="toggle-euler" class="sr-only peer"/>
+          <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500 relative"></div>
+          <span class="ml-3 font-semibold text-purple-900">Euler Line</span>
+        </label>
+        <p class="text-xs text-purple-700/80 leading-relaxed">
+          A line that always passes through the Orthocenter, Centroid, and Circumcenter in any non-equilateral triangle.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SVG Canvas -->
+  <div class="flex-1 relative overflow-hidden select-none bg-slate-100">
+    <!-- Decorative Grid -->
+    <div class="absolute inset-0 pointer-events-none opacity-20" 
+         style="background-image: radial-gradient(circle at 1px 1px, #94a3b8 1px, transparent 0); background-size: 24px 24px;"></div>
+    
+    <svg id="svg-canvas" class="w-full h-full block">
+      
+      <!-- DEFINITIONS -->
+      <defs>
+        <marker id="arrow-amber" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#F59E0B" opacity="0.7"/>
+        </marker>
+      </defs>
+
+      <!-- LAYER 0: BASE TRIANGLE & EXTENSIONS -->
+      <g id="layer-extensions" style="display: none;">
+        <line id="ext-bc" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="6,6" style="display: none;" />
+        <line id="ext-ac" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="6,6" style="display: none;" />
+        <line id="ext-ab" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="6,6" style="display: none;" />
+      </g>
+      
+      <polygon id="triangle-poly" fill="#f1f5f9" stroke="#64748b" stroke-width="3" stroke-linejoin="round" class="drop-shadow-sm" />
+
+      <!-- LAYER 1: CENTROID (Medians) -->
+      <g id="layer-centroid" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.7">
+        <line id="med-a" />
+        <line id="med-b" />
+        <line id="med-c" />
+      </g>
+
+      <!-- LAYER 2: CIRCUMCENTER (Perpendicular Bisectors & Circumcircle) -->
+      <g id="layer-circumcenter" stroke="#3B82F6" opacity="0.6" style="display: none;">
+        <circle id="circ-circle" fill="none" stroke-width="2" />
+        <line id="perp-bc" stroke-width="1.5" stroke-dasharray="5,5" />
+        <line id="perp-ac" stroke-width="1.5" stroke-dasharray="5,5" />
+        <line id="perp-ab" stroke-width="1.5" stroke-dasharray="5,5" />
+      </g>
+
+      <!-- LAYER 3: ORTHOCENTER (Altitudes) -->
+      <g id="layer-orthocenter" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.6" style="display: none;">
+        <line id="alt-a" />
+        <line id="alt-b" />
+        <line id="alt-c" />
+        <rect id="sq-a" width="8" height="8" fill="none" />
+        <rect id="sq-b" width="8" height="8" fill="none" />
+        <rect id="sq-c" width="8" height="8" fill="none" />
+      </g>
+
+      <!-- LAYER 4: INCENTER (Angle Bisectors & Incircle) -->
+      <g id="layer-incenter" stroke="#10B981" opacity="0.6" style="display: none;">
+        <circle id="in-circle" fill="none" stroke-width="2" />
+        <line id="bis-a" stroke-width="1.5" stroke-dasharray="4,4" />
+        <line id="bis-b" stroke-width="1.5" stroke-dasharray="4,4" />
+        <line id="bis-c" stroke-width="1.5" stroke-dasharray="4,4" />
+      </g>
+
+      <!-- LAYER 5: EULER LINE -->
+      <g id="layer-euler" style="display: none;">
+        <line id="euler-line" stroke="#8B5CF6" stroke-width="2.5" stroke-dasharray="8,8" opacity="0.8" />
+      </g>
+
+      <!-- LAYER 6: CENTER POINTS -->
+      <g id="layer-points">
+        <g id="group-g">
+          <circle id="pt-g" r="5" fill="#F59E0B" class="transition-transform hover:scale-150 cursor-help" style="transform-origin: center; transform-box: fill-box;" />
+          <text id="txt-g" fill="#F59E0B" font-weight="bold" class="text-sm shadow-white drop-shadow-md">G</text>
+        </g>
+        <g id="group-o" style="display: none;">
+          <circle id="pt-o" r="5" fill="#3B82F6" class="transition-transform hover:scale-150 cursor-help" style="transform-origin: center; transform-box: fill-box;" />
+          <text id="txt-o" fill="#3B82F6" font-weight="bold" class="text-sm drop-shadow-md">O</text>
+        </g>
+        <g id="group-h" style="display: none;">
+          <circle id="pt-h" r="5" fill="#EF4444" class="transition-transform hover:scale-150 cursor-help" style="transform-origin: center; transform-box: fill-box;" />
+          <text id="txt-h" fill="#EF4444" font-weight="bold" class="text-sm drop-shadow-md">H</text>
+        </g>
+        <g id="group-i" style="display: none;">
+          <circle id="pt-i" r="5" fill="#10B981" class="transition-transform hover:scale-150 cursor-help" style="transform-origin: center; transform-box: fill-box;" />
+          <text id="txt-i" fill="#10B981" font-weight="bold" class="text-sm drop-shadow-md">I</text>
+        </g>
+      </g>
+
+      <!-- LAYER 7: DRAGGABLE VERTICES -->
+      <g id="layer-vertices">
+        <circle id="grab-a" r="24" fill="transparent" cursor="grab" />
+        <circle id="dot-a" r="8" fill="#1e293b" class="pointer-events-none" />
+        <text id="txt-a" fill="#1e293b" font-weight="bold" class="text-lg drop-shadow-md pointer-events-none">A</text>
+
+        <circle id="grab-b" r="24" fill="transparent" cursor="grab" />
+        <circle id="dot-b" r="8" fill="#1e293b" class="pointer-events-none" />
+        <text id="txt-b" fill="#1e293b" font-weight="bold" class="text-lg drop-shadow-md pointer-events-none">B</text>
+
+        <circle id="grab-c" r="24" fill="transparent" cursor="grab" />
+        <circle id="dot-c" r="8" fill="#1e293b" class="pointer-events-none" />
+        <text id="txt-c" fill="#1e293b" font-weight="bold" class="text-lg drop-shadow-md pointer-events-none">C</text>
+      </g>
+
+    </svg>
+
+    <!-- UI Overlay Notice -->
+    <div class="absolute top-4 left-4 pointer-events-none">
+      <div class="bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold text-slate-600 shadow-sm border border-slate-200 flex items-center">
+         <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2 animate-pulse"></span>
+         Drag the black vertices (A, B, C)
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Math Utilities
+    const distance = (p1, p2) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
+
+    const projectPointOnLine = (p, a, b) => {
+      const ab = { x: b.x - a.x, y: b.y - a.y };
+      const ap = { x: p.x - a.x, y: p.y - a.y };
+      const lengthSquared = ab.x * ab.x + ab.y * ab.y;
+      if (lengthSquared === 0) return a;
+      const t = (ap.x * ab.x + ap.y * ab.y) / lengthSquared;
+      return { x: a.x + t * ab.x, y: a.y + t * ab.y };
+    };
+
+    const midpoint = (p1, p2) => ({
+      x: (p1.x + p2.x) / 2,
+      y: (p1.y + p2.y) / 2
+    });
+
+    const getPerpVector = (p1, p2) => {
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const length = Math.hypot(dx, dy);
+      if (length === 0) return { x: 0, y: 0 };
+      return { x: -dy / length, y: dx / length };
+    };
+
+    const isPointOnSegment = (p, a, b) => {
+      const d1 = distance(p, a);
+      const d2 = distance(p, b);
+      const lineLen = distance(a, b);
+      return d1 + d2 >= lineLen - 0.01 && d1 + d2 <= lineLen + 0.01;
+    };
+
+    // Application State
+    const state = {
+      A: { x: 400, y: 150 },
+      B: { x: 200, y: 450 },
+      C: { x: 600, y: 450 },
+      toggles: {
+        centroid: true,
+        circumcenter: false,
+        orthocenter: false,
+        incenter: false,
+        euler: false
+      },
+      draggingNode: null
+    };
+
+    const svg = document.getElementById('svg-canvas');
+
+    // DOM Helpers
+    const setAttr = (id, attrs) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      for (const [key, value] of Object.entries(attrs)) {
+        el.setAttribute(key, value);
+      }
+    };
+
+    const setDisplay = (id, show) => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = show ? '' : 'none';
+    };
+
+    const drawExtendedLine = (p, dir, len = 2000) => ({
+      x1: p.x - dir.x * len,
+      y1: p.y - dir.y * len,
+      x2: p.x + dir.x * len,
+      y2: p.y + dir.y * len
+    });
+
+    // Main Update Function
+    function render() {
+      const { A, B, C, toggles } = state;
+      
+      const aLen = distance(B, C);
+      const bLen = distance(A, C);
+      const cLen = distance(A, B);
+
+      // --- Polygon ---
+      setAttr('triangle-poly', { points: `${A.x},${A.y} ${B.x},${B.y} ${C.x},${C.y}` });
+
+      // --- Centroid (G) ---
+      const G = {
+        x: (A.x + B.x + C.x) / 3,
+        y: (A.y + B.y + C.y) / 3
+      };
+      const M_a = midpoint(B, C);
+      const M_b = midpoint(A, C);
+      const M_c = midpoint(A, B);
+
+      if (toggles.centroid) {
+        setAttr('med-a', { x1: A.x, y1: A.y, x2: M_a.x, y2: M_a.y });
+        setAttr('med-b', { x1: B.x, y1: B.y, x2: M_b.x, y2: M_b.y });
+        setAttr('med-c', { x1: C.x, y1: C.y, x2: M_c.x, y2: M_c.y });
+        setAttr('pt-g', { cx: G.x, cy: G.y });
+        setAttr('txt-g', { x: G.x + 8, y: G.y - 8 });
+      }
+
+      // --- Circumcenter (O) ---
+      const D = 2 * (A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y));
+      const safeD = Math.abs(D) < 0.0001 ? 0.0001 : D;
+      const O = {
+        x: ((A.x * A.x + A.y * A.y) * (B.y - C.y) + (B.x * B.x + B.y * B.y) * (C.y - A.y) + (C.x * C.x + C.y * C.y) * (A.y - B.y)) / safeD,
+        y: ((A.x * A.x + A.y * A.y) * (C.x - B.x) + (B.x * B.x + B.y * B.y) * (A.x - C.x) + (C.x * C.x + C.y * C.y) * (B.x - A.x)) / safeD
+      };
+      const circumradius = distance(O, A);
+      const perpBC = getPerpVector(B, C);
+      const perpAC = getPerpVector(A, C);
+      const perpAB = getPerpVector(A, B);
+
+      if (toggles.circumcenter) {
+        setAttr('circ-circle', { cx: O.x, cy: O.y, r: circumradius });
+        setAttr('perp-bc', drawExtendedLine(M_a, perpBC));
+        setAttr('perp-ac', drawExtendedLine(M_b, perpAC));
+        setAttr('perp-ab', drawExtendedLine(M_c, perpAB));
+        setAttr('pt-o', { cx: O.x, cy: O.y });
+        setAttr('txt-o', { x: O.x + 8, y: O.y - 8 });
+      }
+
+      // --- Orthocenter (H) ---
+      const H = { x: 3 * G.x - 2 * O.x, y: 3 * G.y - 2 * O.y };
+      const H_a = projectPointOnLine(A, B, C);
+      const H_b = projectPointOnLine(B, A, C);
+      const H_c = projectPointOnLine(C, A, B);
+      
+      const extendBC = !isPointOnSegment(H_a, B, C);
+      const extendAC = !isPointOnSegment(H_b, A, C);
+      const extendAB = !isPointOnSegment(H_c, A, B);
+
+      if (toggles.orthocenter) {
+        setDisplay('ext-bc', extendBC);
+        if (extendBC) setAttr('ext-bc', { x1: B.x, y1: B.y, x2: H_a.x, y2: H_a.y });
+        
+        setDisplay('ext-ac', extendAC);
+        if (extendAC) setAttr('ext-ac', { x1: A.x, y1: A.y, x2: H_b.x, y2: H_b.y });
+        
+        setDisplay('ext-ab', extendAB);
+        if (extendAB) setAttr('ext-ab', { x1: A.x, y1: A.y, x2: H_c.x, y2: H_c.y });
+
+        setAttr('alt-a', { x1: A.x, y1: A.y, x2: H_a.x, y2: H_a.y });
+        setAttr('alt-b', { x1: B.x, y1: B.y, x2: H_b.x, y2: H_b.y });
+        setAttr('alt-c', { x1: C.x, y1: C.y, x2: H_c.x, y2: H_c.y });
+
+        setAttr('sq-a', { x: H_a.x, y: H_a.y, transform: `rotate(${Math.atan2(B.y-C.y, B.x-C.x) * 180 / Math.PI} ${H_a.x} ${H_a.y})` });
+        setAttr('sq-b', { x: H_b.x, y: H_b.y, transform: `rotate(${Math.atan2(C.y-A.y, C.x-A.x) * 180 / Math.PI} ${H_b.x} ${H_b.y})` });
+        setAttr('sq-c', { x: H_c.x, y: H_c.y, transform: `rotate(${Math.atan2(B.y-A.y, B.x-A.x) * 180 / Math.PI} ${H_c.x} ${H_c.y})` });
+
+        setAttr('pt-h', { cx: H.x, cy: H.y });
+        setAttr('txt-h', { x: H.x + 8, y: H.y - 8 });
+      }
+
+      // --- Incenter (I) ---
+      const perimeter = aLen + bLen + cLen;
+      const I = perimeter === 0 ? A : {
+        x: (aLen * A.x + bLen * B.x + cLen * C.x) / perimeter,
+        y: (aLen * A.y + bLen * B.y + cLen * C.y) / perimeter
+      };
+      const s = perimeter / 2;
+      const area = Math.sqrt(Math.max(0, s * (s - aLen) * (s - bLen) * (s - cLen)));
+      const inradius = perimeter > 0 ? area / s : 0;
+      
+      const I_a = { x: (bLen * B.x + cLen * C.x) / (bLen + cLen), y: (bLen * B.y + cLen * C.y) / (bLen + cLen) };
+      const I_b = { x: (aLen * A.x + cLen * C.x) / (aLen + cLen), y: (aLen * A.y + cLen * C.y) / (aLen + cLen) };
+      const I_c = { x: (aLen * A.x + bLen * B.x) / (aLen + bLen), y: (aLen * A.y + bLen * B.y) / (aLen + bLen) };
+
+      if (toggles.incenter) {
+        setAttr('in-circle', { cx: I.x, cy: I.y, r: inradius });
+        setAttr('bis-a', { x1: A.x, y1: A.y, x2: I_a.x, y2: I_a.y });
+        setAttr('bis-b', { x1: B.x, y1: B.y, x2: I_b.x, y2: I_b.y });
+        setAttr('bis-c', { x1: C.x, y1: C.y, x2: I_c.x, y2: I_c.y });
+        setAttr('pt-i', { cx: I.x, cy: I.y });
+        setAttr('txt-i', { x: I.x + 8, y: I.y - 8 });
+      }
+
+      // --- Euler Line ---
+      if (toggles.euler) {
+        setAttr('euler-line', {
+          x1: O.x - (H.x - O.x)*10, y1: O.y - (H.y - O.y)*10,
+          x2: H.x + (H.x - O.x)*10, y2: H.y + (H.y - O.y)*10
+        });
+      }
+
+      // --- Update Vertices UI ---
+      setAttr('grab-a', { cx: A.x, cy: A.y }); setAttr('dot-a', { cx: A.x, cy: A.y }); setAttr('txt-a', { x: A.x - 20, y: A.y - 12 });
+      setAttr('grab-b', { cx: B.x, cy: B.y }); setAttr('dot-b', { cx: B.x, cy: B.y }); setAttr('txt-b', { x: B.x - 20, y: B.y + 24 });
+      setAttr('grab-c', { cx: C.x, cy: C.y }); setAttr('dot-c', { cx: C.x, cy: C.y }); setAttr('txt-c', { x: C.x + 12, y: C.y + 24 });
+    }
+
+    // Toggle Handlers
+    function setupToggles() {
+      const toggleMap = {
+        'toggle-centroid': ['centroid', 'layer-centroid', 'group-g'],
+        'toggle-circumcenter': ['circumcenter', 'layer-circumcenter', 'group-o'],
+        'toggle-orthocenter': ['orthocenter', 'layer-orthocenter', 'group-h', 'layer-extensions'],
+        'toggle-incenter': ['incenter', 'layer-incenter', 'group-i'],
+        'toggle-euler': ['euler', 'layer-euler']
+      };
+
+      for (const [id, [stateKey, ...layerIds]] of Object.entries(toggleMap)) {
+        const checkbox = document.getElementById(id);
+        checkbox.addEventListener('change', (e) => {
+          state.toggles[stateKey] = e.target.checked;
+          layerIds.forEach(layerId => setDisplay(layerId, e.target.checked));
+          render();
+        });
+      }
+    }
+
+    // Dragging Handlers
+    const getMouseCoords = (e) => {
+      const CTM = svg.getScreenCTM();
+      const clientX = e.clientX ?? (e.touches && e.touches[0].clientX);
+      const clientY = e.clientY ?? (e.touches && e.touches[0].clientY);
+      return {
+        x: (clientX - CTM.e) / CTM.a,
+        y: (clientY - CTM.f) / CTM.d
+      };
+    };
+
+    const handlePointerDown = (node) => (e) => {
+      e.preventDefault();
+      state.draggingNode = node;
+      svg.style.cursor = 'grabbing';
+    };
+
+    const handlePointerMove = (e) => {
+      if (!state.draggingNode) return;
+      e.preventDefault();
+      const coords = getMouseCoords(e);
+      const bounds = svg.getBoundingClientRect();
+      coords.x = Math.max(10, Math.min(coords.x, bounds.width - 10));
+      coords.y = Math.max(10, Math.min(coords.y, bounds.height - 10));
+
+      state[state.draggingNode] = coords;
+      render();
+    };
+
+    const handlePointerUp = () => {
+      state.draggingNode = null;
+      svg.style.cursor = 'default';
+    };
+
+    // Setup interactions
+    document.getElementById('grab-a').addEventListener('pointerdown', handlePointerDown('A'));
+    document.getElementById('grab-b').addEventListener('pointerdown', handlePointerDown('B'));
+    document.getElementById('grab-c').addEventListener('pointerdown', handlePointerDown('C'));
+
+    window.addEventListener('pointermove', handlePointerMove, { passive: false });
+    window.addEventListener('pointerup', handlePointerUp);
+    
+    // Add touch support fallback for older iOS
+    document.getElementById('grab-a').addEventListener('touchstart', handlePointerDown('A'), { passive: false });
+    document.getElementById('grab-b').addEventListener('touchstart', handlePointerDown('B'), { passive: false });
+    document.getElementById('grab-c').addEventListener('touchstart', handlePointerDown('C'), { passive: false });
+    window.addEventListener('touchmove', handlePointerMove, { passive: false });
+    window.addEventListener('touchend', handlePointerUp);
+
+    // Initialization
+    setupToggles();
+    render();
+  </script>
+</body>
+</html>
